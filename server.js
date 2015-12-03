@@ -64,19 +64,6 @@ app.post('/todos', function (req, res) {
     }, function (e) {
         res.status(400).json(e);
     });
-
-
-    //    if (!_.isBoolean(body.completed) || !_.isString(body.description) || body.description.trim().length === 0) {
-    //        return res.status(400).send();
-    //    }
-    //
-    //    body.description = body.description.trim();
-    //
-    //    body.id = todoNextId++;
-    //
-    //    todos.push(body);
-    //
-    //    res.json(body);
 });
 
 // DELETE /todos/:id
@@ -132,6 +119,35 @@ app.put('/todos/:id', function (req, res) {
         res.json(todo.toJSON());
     }, function (e) {
         res.status(400).json(e);
+    });
+});
+
+app.post('/users', function (req, res) {
+    var body = _.pick(req.body, 'email', 'password');
+
+    db.user.create(body).then(function (user) {
+        res.json(user.toJSON());
+    }, function (e) {
+        res.status(400).json(e);
+    });
+});
+
+app.get('/users', function (req, res) {
+    var query = req.query;
+    var where = {};
+    
+//    if (query.hasOwnProperty('q') && query.q.length > 0) {
+    //        where.description = {
+    //            $like: '%' + query.q + '%'
+    //        };
+    //    }
+
+    db.user.findAll({
+        where: where
+    }).then(function (users) {
+        res.json(users);
+    }, function (e) {
+        res.status(500).send();
     });
 });
 
