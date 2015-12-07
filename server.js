@@ -2,6 +2,7 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var _ = require('underscore');
 var db = require('./db.js');
+var bcrypt = require('bcryptjs');
 
 var app = express();
 var PORT = process.env.PORT || 3000;
@@ -80,17 +81,6 @@ app.delete('/todos/:id', function (req, res) {
     }, function (e) {
         res.status(500).send();
     });
-
-    //    var matchedTodo = _.findWhere(todos, {
-    //        id: todoId
-    //    });
-    //
-    //    if (matchedTodo) {
-    //        todos = _.without(todos, matchedTodo);
-    //        res.json(matchedTodo);
-    //    } else {
-    //        res.status(404).send();
-    //    }
 });
 
 // PUT /todos/:id
@@ -122,28 +112,36 @@ app.put('/todos/:id', function (req, res) {
     });
 });
 
+// POST /users
 app.post('/users', function (req, res) {
     var body = _.pick(req.body, 'email', 'password');
 
     db.user.create(body).then(function (user) {
-        res.json(user.toJSON());
+        res.json(user.toPublicJSON());
     }, function (e) {
         res.status(400).json(e);
     });
 });
 
+// POST /users/login
+app.post('/users/login', function (req, res) {
+    var body = _.pick(req.body, 'email', 'password');
+
+    db.user.authenticate(body).then(function (user) {
+        res.json(user.toPublicJSON());
+    }, function () {
+        res.status(401).send();
+    });
+});
+
+// GET /users
 app.get('/users', function (req, res) {
     var query = req.query;
     var where = {};
-    
-//    if (query.hasOwnProperty('q') && query.q.length > 0) {
-    //        where.description = {
-    //            $like: '%' + query.q + '%'
-    //        };
-    //    }
 
     db.user.findAll({
-        where: where
+        where: where,
+        attributes: ['id', 'email', 'createdAt', 'updatedAt']
     }).then(function (users) {
         res.json(users);
     }, function (e) {
@@ -151,7 +149,10 @@ app.get('/users', function (req, res) {
     });
 });
 
-db.sequelize.sync().then(function () {
+// Sync database & Port listening
+db.sequelize.sync({
+    force: true
+}).then(function () {
     app.listen(PORT, function () {
         console.log('Express listening on port ' + PORT + '!');
     });
